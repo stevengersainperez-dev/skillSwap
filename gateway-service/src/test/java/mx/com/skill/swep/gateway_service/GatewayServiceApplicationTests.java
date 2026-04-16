@@ -1,10 +1,10 @@
-package mx.com.skill.swap.skillSwap;
+package mx.com.skill.swep.gateway_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SkillSwapApplicationTests {
+class GatewayServiceApplicationTests {
 
 	@Test
 	void contextLoads() {

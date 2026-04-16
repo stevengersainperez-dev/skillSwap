@@ -16,7 +16,7 @@
 
     <modules>
         <module>auth-service</module>
-        <!-- <module>gateway-service</module> -->
+        <module>gateway-service</module>
         <!--  <module>user-service</module> -->
         <!-- <module>skill-swap-users</module> -->
     </modules>
