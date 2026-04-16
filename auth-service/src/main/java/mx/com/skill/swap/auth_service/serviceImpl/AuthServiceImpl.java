@@ -33,7 +33,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
 
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     @Override
     public UserDTO register(RegisterDTO registerDTO) {
         if(userRepository.findByEmail(registerDTO.getEmail()).isPresent()){
@@ -50,7 +50,7 @@ public class AuthServiceImpl implements AuthService {
         return userMapper.toUserDTO(userEntity);
     }
 
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     @Override
     public LoginResponseDTO login(LoginDTO loginDTO) {
         UserEntity userEntity = userRepository.findByEmail(loginDTO.getEmail())
