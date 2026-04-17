@@ -1,0 +1,149 @@
+version: "3.8"  # Versión de Docker Compose (define compatibilidad de features modernas)
+
+services:  # Aquí defines todos los contenedores (microservicios + bases de datos)
+
+
+  # =========================
+  # GATEWAY (PUERTA DE ENTRADA)
+  # =========================
+  gateway:
+    image: stevenpc/gateway:1.0.0  # Imagen construida de tu Spring Cloud Gateway
+    container_name: gateway  # Nombre del contenedor en Docker
+
+    ports:
+      - "8080:8080"  # Expone el gateway al exterior (localhost:8080)
+
+    depends_on:
+      - auth-service     # El gateway espera que estos servicios existan
+      - user-service
+
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8001  # URL interna del auth-service (nombre del contenedor)
+      USER_SERVICE_URL: http://user-service:8002  # URL interna del user-service
+
+    networks:
+      - micro-net  # Red interna donde todos los microservicios se comunican
+
+
+  # =========================
+  # AUTH SERVICE (MICROSERVICIO DE AUTENTICACIÓN)
+  # =========================
+  auth-service:
+    image: stevenpc/auth:1.0.0  # Imagen del microservicio de autenticación
+    container_name: auth-service
+
+    ports:
+      - "8001:8001"  # Expone el servicio de auth
+
+    depends_on:
+      postgres:  # No arranca hasta que Postgres esté saludable
+        condition: service_healthy
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/authdb  # Conexión a Postgres (nombre del contenedor)
+      SPRING_DATASOURCE_USERNAME: postgres  # Usuario de la BD
+      SPRING_DATASOURCE_PASSWORD: admin      # Password de la BD
+
+    networks:
+      - micro-net
+
+
+  # =========================
+  # USER SERVICE (MICROSERVICIO DE USUARIOS)
+  # =========================
+  user-service:
+    image: stevenpc/user:1.0.0
+    container_name: user-service
+
+    ports:
+      - "8002:8002"  # Expone el microservicio de usuarios
+
+    depends_on:
+      mysql:  # Espera a que MySQL esté listo
+        condition: service_healthy
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/user_db  # Conexión a MySQL (nombre del contenedor)
+      SPRING_DATASOURCE_USERNAME: root  # Usuario root de MySQL
+      SPRING_DATASOURCE_PASSWORD: admin   # Password
+
+    networks:
+      - micro-net
+
+
+  # =========================
+  # POSTGRES (BASE DE DATOS DE AUTH SERVICE)
+  # =========================
+  postgres:
+    image: postgres:15-alpine  # Imagen oficial de PostgreSQL
+    container_name: auth-postgres
+
+    environment:
+      POSTGRES_DB: authdb       # Base de datos que se crea automáticamente
+      POSTGRES_USER: postgres   # Usuario administrador
+      POSTGRES_PASSWORD: admin  # Password
+
+    ports:
+      - "5433:5432"  # Expone PostgreSQL (opcional para acceso externo)
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Persistencia de datos (no se borran al reiniciar)
+
+    networks:
+      - micro-net
+
+    # =========================
+    # HEALTHCHECK (verifica si Postgres está listo)
+    # =========================
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d authdb"]  # Comando que valida si DB está lista
+      interval: 10s     # Cada 10 segundos revisa estado
+      timeout: 5s       # Si tarda más de 5s, falla el intento
+      retries: 5        # Intenta 5 veces antes de marcar error
+      start_period: 20s # Espera 20s antes de empezar a evaluar (tiempo de arranque)
+
+
+  # =========================
+  # MYSQL (BASE DE DATOS DE USER SERVICE)
+  # =========================
+  mysql:
+    image: mysql:8  # Imagen oficial de MySQL
+    container_name: user-mysql
+
+    environment:
+      MYSQL_ROOT_PASSWORD: admin  # Password del root
+      MYSQL_DATABASE: user_db     # Base de datos inicial creada automáticamente
+
+    ports:
+      - "3307:3306"  # Expone MySQL
+
+    volumes:
+      - mysql_data:/var/lib/mysql  # Persistencia de datos
+
+    networks:
+      - micro-net
+
+    # =========================
+    # HEALTHCHECK MYSQL
+    # =========================
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]  # Verifica si MySQL responde
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+
+# =========================
+# RED COMPARTIDA ENTRE TODOS LOS CONTENEDORES
+# =========================
+networks:
+  micro-net:  # Permite comunicación entre microservicios por nombre (auth-service, mysql, etc.)
+
+
+# =========================
+# VOLUMENES (persistencia de datos)
+# =========================
+volumes:
+  postgres_data:  # Guarda datos de Postgres aunque el contenedor se elimine
+  mysql_data:     # Guarda datos de MySQL aunque el contenedor se elimine
