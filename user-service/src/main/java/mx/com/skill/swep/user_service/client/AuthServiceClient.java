@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name = "auth-service", url ="http://localhost:8001")
+@FeignClient(name = "auth-service", url ="${auth.service.url}")
 public interface AuthServiceClient {
 
     @PutMapping("/auth/update-user")

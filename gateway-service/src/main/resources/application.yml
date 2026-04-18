@@ -6,14 +6,15 @@ spring:
     gateway:
       routes:
         - id: auth-service
-          uri: http://localhost:8001 #llama a local
-          #uri: http://auth-service:8001 #llama a micro en la misma red
+          #uri: http://localhost:8001 #llama a local
+          uri: http://auth-service:8001 #llama a micro en la misma red
           #uri: http://host.docker.internal:8001 llama a micro corriendo en local
           predicates:
             - Path=/auth/**
 
         - id: user-service
-          uri: http://localhost:8002
+          #uri: http://localhost:8002
+          uri: http://user-service:8002 #llama a micro en la misma red
 
           predicates:
             - Path=/users/**
